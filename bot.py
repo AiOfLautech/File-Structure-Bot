@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Environment variables for deployment
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("7366358800:AAF2684s1_Ipw-4xnazbdU6lXrYHRG0mcnM")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 PORT = int(os.getenv("PORT", 8443))
 
