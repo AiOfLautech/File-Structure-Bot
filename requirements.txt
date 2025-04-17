@@ -1,0 +1,2 @@
+python-telegram-bot==13.7
+fpdf==1.7.2
