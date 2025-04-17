@@ -15,16 +15,16 @@ from telegram.ext import (
     ContextTypes,
 )
 
-# Set up logging for console output
+# Set up logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# Environment variables for deployment
-TOKEN = os.getenv("7366358800:AAF2684s1_Ipw-4xnazbdU6lXrYHRG0mcnM")
-WEBHOOK_URL = os.getenv("https://file-structure-bot.onrender.com")
+# Bot credentials (hard‑coded)
+TOKEN = "7366358800:AAF2684s1_Ipw-4xnazbdU6lXrYHRG0mcnM"
+WEBHOOK_URL = "https://file-structure-bot.onrender.com"
 PORT = int(os.getenv("PORT", 8443))
 
 # Directories for uploads and zips
@@ -157,7 +157,13 @@ async def api_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             paths = json_data if isinstance(json_data, list) else json_data.get("structure", [])
             if not paths:
                 raise ValueError("No structure provided")
-            await create_structure_with_progress(update, context, [(p["path"], p.get("content", "")) for p in paths], format_type, "api_structure")
+            await create_structure_with_progress(
+                update,
+                context,
+                [(p["path"], p.get("content", "")) for p in paths],
+                format_type,
+                "api_structure"
+            )
         except Exception as e:
             await update.message.reply_text(f"API Error: {str(e)}")
     else:
@@ -189,7 +195,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
             format_type = state_info.get("format", "zip")
             paths = []
             if file_name.endswith(".json"):
-                with open(file_path, 'r') as f:
+                with open(file_path, "r") as f:
                     data = json.load(f)
                 if not isinstance(data, list):
                     raise ValueError("JSON must be a list of objects")
@@ -198,7 +204,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         raise ValueError("Each item must be an object with a 'path' key")
                     paths.append((item["path"], item.get("content", "")))
             else:
-                with open(file_path, 'r') as f:
+                with open(file_path, "r") as f:
                     paths = [(line.strip(), "") for line in f if line.strip()]
 
             if len(paths) > 10:
@@ -218,7 +224,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await create_structure_with_progress(update, context, paths, format_type, "structure")
 
         elif state == "creating_pdf":
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 text = f.read()
             await create_pdf(update, context, text)
 
@@ -238,7 +244,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if state == "quick_structure":
-        paths = [(line.strip(), "") for line in text.split('\n') if line.strip()]
+        paths = [(line.strip(), "") for line in text.split("\n") if line.strip()]
         format_type = state_info.get("format", "zip")
         if len(paths) > 10:
             user_states[user_id] = {
@@ -303,7 +309,7 @@ async def create_structure_with_progress(update: Update, context: ContextTypes.D
             if format_type == "zip":
                 shutil.make_archive(output_path, 'zip', temp_dir)
                 archive_path = f"{output_path}.zip"
-            else:  # tar.gz
+            else:
                 archive_path = f"{output_path}.tar.gz"
                 with tarfile.open(archive_path, "w:gz") as tar:
                     tar.add(temp_dir, arcname="")
@@ -346,7 +352,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"An error occurred: {str(context.error)}. Please try again or contact support."
     )
 
-def main():
+async def main():
     """Set up and run the bot with webhook."""
     app = Application.builder().token(TOKEN).build()
 
@@ -364,7 +370,7 @@ def main():
     # Error handler
     app.add_error_handler(error_handler)
 
-    # Set up webhook
+    # Webhook setup
     webhook_path = f"/webhook/{TOKEN}"
     full_webhook_url = urljoin(WEBHOOK_URL, webhook_path)
     app.run_webhook(
@@ -373,7 +379,8 @@ def main():
         url_path=webhook_path,
         webhook_url=full_webhook_url
     )
-    logger.info(f"Bot connected to Telegram API with webhook at {full_webhook_url}")
+    logger.info(f"Bot connected with webhook at {full_webhook_url}")
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
